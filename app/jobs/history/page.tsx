@@ -37,7 +37,7 @@ export default function JobHistoryPage() {
           />
         ) : (
           <div className="space-y-3">
-            {jobs.map((j, i) => <JobCard key={j.id} job={j} index={i} />)}
+            {jobs.map((j, i) => <JobCard key={j.id} job={j} />)}
           </div>
         )}
       </div>
