@@ -17,6 +17,10 @@ export interface Driver {
   name: string;
   phone: string;
   email?: string;
+  location: string;
+  time: string;
+  tonnage: string;
+  status: 'pending' | 'active' | 'completed';
 }
 
 // Location Types

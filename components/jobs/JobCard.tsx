@@ -1,15 +1,7 @@
 // components/jobs/JobCard.tsx
-import { MapPin, Clock, ArrowRight, Weight } from 'lucide-react';
+import type { JobSummary } from '@/types';
 
-interface Job {
-  id: string;
-  location: string;
-  time: string;
-  tonnage: string;
-  status: 'pending' | 'active' | 'completed';
-}
-
-export function JobCard({ job }: { job: Job }) {
+export function JobCard({ job }: { job: JobSummary }) {
   return (
     <div className="bg-surface-raised p-4 rounded-lg shadow-card border border-border hover:shadow-card-hover transition-all active:scale-[0.98] animate-slide-up">
       <div className="flex justify-between items-start mb-4">
@@ -44,7 +36,7 @@ export function JobCard({ job }: { job: Job }) {
   );
 }
 
-function StatusBadge({ status }: { status: Job['status'] }) {
+function StatusBadge({ status }: { status: JobSummary['status'] }) {
   const styles = {
     pending: 'bg-warning-light text-warning',
     active: 'bg-info-light text-info',
