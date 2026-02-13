@@ -26,13 +26,6 @@ export default function ProfilePage() {
     } catch (err) { console.error(err); }
   }
 
-  async function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-      await apiClient.logout();
-      await clearAllData();
-      router.push('/auth/login');
-    }
-  }
 
   return (
     <div className="min-h-screen bg-surface pb-20">
