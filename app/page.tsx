@@ -2,18 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api/client';
 
 export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Artificial delay or immediate check
-    const checkAuth = async () => {
-      const target = apiClient.isAuthenticated() ? '/jobs' : '/auth/login';
-      router.push(target);
-    };
-    checkAuth();
+    router.replace('/jobs');
   }, [router]);
 
   return (
