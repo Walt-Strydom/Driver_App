@@ -7,18 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui';
 
-type Step = 'phone' | 'otp';
-
 export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, setDriver } = useAuth();
 
-  const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Redirect already-authenticated drivers
   useEffect(() => {
@@ -27,66 +22,23 @@ export default function LoginPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Resend cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
-
-  async function handleRequestOTP(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
-    const trimmed = phone.trim();
+    const trimmed = code.trim().toUpperCase();
     if (!trimmed) {
-      setError('Please enter your phone number.');
+      setError('Please enter your driver access code.');
       return;
     }
 
     setSubmitting(true);
     try {
-      await apiClient.requestOTP({ phone: trimmed });
-      setStep('otp');
-      setResendCooldown(60);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleVerifyOTP(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-
-    const trimmedOtp = otp.trim();
-    if (!trimmedOtp) {
-      setError('Please enter the OTP code.');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await apiClient.verifyOTP({ phone: phone.trim(), otp: trimmedOtp });
+      const res = await apiClient.loginWithCode({ code: trimmed });
       setDriver(res.driver);
       router.replace('/jobs');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid OTP. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleResend() {
-    if (resendCooldown > 0) return;
-    setError('');
-    setSubmitting(true);
-    try {
-      await apiClient.requestOTP({ phone: phone.trim() });
-      setResendCooldown(60);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend OTP.');
+      setError(err instanceof Error ? err.message : 'Invalid access code. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -120,87 +72,44 @@ export default function LoginPage() {
           <p className="text-txt-secondary text-sm">Coal Logistics — Driver Portal</p>
         </div>
 
-        {/* Card */}
+        {/* Login card */}
         <div className="bg-surface rounded-2xl shadow-md border border-border p-6 space-y-5">
-          {step === 'phone' ? (
-            <>
-              <div>
-                <h2 className="text-lg font-semibold text-txt">Sign in</h2>
-                <p className="text-sm text-txt-secondary mt-0.5">Enter your mobile number to receive a one-time PIN.</p>
-              </div>
+          <div>
+            <h2 className="text-lg font-semibold text-txt">Sign in</h2>
+            <p className="text-sm text-txt-secondary mt-0.5">
+              Enter the unique access code issued to you by your dispatcher.
+            </p>
+          </div>
 
-              <form onSubmit={handleRequestOTP} className="space-y-4">
-                <Input
-                  label="Mobile number"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="+27 82 000 0000"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={submitting}
-                />
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              label="Driver access code"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              placeholder="e.g. DRV-2024-ABCD"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              disabled={submitting}
+              autoFocus
+            />
 
-                {error && (
-                  <p className="text-sm text-danger font-medium">{error}</p>
-                )}
+            {error && (
+              <p className="text-sm text-danger font-medium">{error}</p>
+            )}
 
-                <Button type="submit" fullWidth size="lg" loading={submitting} disabled={submitting}>
-                  Send OTP
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <div>
-                <h2 className="text-lg font-semibold text-txt">Enter your OTP</h2>
-                <p className="text-sm text-txt-secondary mt-0.5">
-                  We sent a code to <span className="font-medium text-txt">{phone}</span>.
-                </p>
-              </div>
-
-              <form onSubmit={handleVerifyOTP} className="space-y-4">
-                <Input
-                  label="One-time PIN"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  disabled={submitting}
-                  autoFocus
-                />
-
-                {error && (
-                  <p className="text-sm text-danger font-medium">{error}</p>
-                )}
-
-                <Button type="submit" fullWidth size="lg" loading={submitting} disabled={submitting}>
-                  Verify &amp; Sign in
-                </Button>
-              </form>
-
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
-                  className="text-sm text-txt-secondary hover:text-txt underline-offset-2 hover:underline"
-                >
-                  Change number
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={resendCooldown > 0 || submitting}
-                  className="text-sm text-primary disabled:text-txt-tertiary font-medium"
-                >
-                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
-                </button>
-              </div>
-            </>
-          )}
+            <Button type="submit" fullWidth size="lg" loading={submitting} disabled={submitting}>
+              Sign in
+            </Button>
+          </form>
         </div>
+
+        {/* Help hint */}
+        <p className="text-center text-xs text-txt-tertiary px-4">
+          Don&apos;t have a code? Contact your fleet dispatcher to get your access code.
+        </p>
 
         <p className="text-center text-xs text-txt-tertiary font-mono uppercase tracking-widest">
           Coal Logistics v2.0

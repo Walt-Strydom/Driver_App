@@ -91,13 +91,10 @@ export interface JobDetail extends JobSummary {
 }
 
 // API Request/Response Types
-export interface AuthOTPRequest {
-  phone: string;
-}
 
-export interface AuthVerifyRequest {
-  phone: string;
-  otp: string;
+/** Sent to POST /auth/login — each driver holds a unique code issued by dispatch. */
+export interface DriverCodeLoginRequest {
+  code: string;
 }
 
 export interface AuthResponse {

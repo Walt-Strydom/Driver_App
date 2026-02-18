@@ -1,5 +1,5 @@
 import type {
-  AuthOTPRequest, AuthVerifyRequest, AuthResponse,
+  DriverCodeLoginRequest, AuthResponse,
   Driver, JobsListResponse, JobDetail, StatusUpdateRequest,
   StatusUpdateResponse, ProofCompleteResponse,
   SyncHealthResponse, SyncBatchRequest, SyncBatchResponse,
@@ -8,14 +8,13 @@ import { getSettings } from '@/lib/db';
 
 /**
  * API_BASE_URL should point to your n8n instance webhook base.
- * 
+ *
  * The driver app endpoints map to n8n webhooks as follows:
- *   POST /driver/auth/request-otp  → n8n DRV-01 webhook
- *   POST /driver/auth/verify-otp   → n8n DRV-02 webhook  
+ *   POST /driver/auth/login        → n8n DRV-01 webhook (driver code login)
  *   GET  /driver/jobs              → n8n DRV-03 webhook
  *   GET  /driver/jobs/:id          → n8n DRV-04 webhook
  *   POST /driver/jobs/:id/status   → n8n DRV-05 webhook
- *   POST /driver/jobs/:id/proof    → n8n DRV-06 webhook → triggers WF04 (upload-document) 
+ *   POST /driver/jobs/:id/proof    → n8n DRV-06 webhook → triggers WF04 (upload-document)
  *   POST /driver/sync/batch        → n8n DRV-07 webhook
  * 
  * When a proof/document is uploaded via DRV-06, the n8n workflow should:
@@ -110,12 +109,13 @@ class ApiClient {
   }
 
   // ── Auth ──
-  async requestOTP(data: AuthOTPRequest) {
-    return this.request<{ ok: boolean }>('/auth/request-otp', { method: 'POST', body: JSON.stringify(data) }, false);
-  }
-
-  async verifyOTP(data: AuthVerifyRequest) {
-    const res = await this.request<AuthResponse>('/auth/verify-otp', { method: 'POST', body: JSON.stringify(data) }, false);
+  /**
+   * Authenticates a driver using their pre-assigned unique access code.
+   * Maps to n8n DRV-01 webhook: POST /auth/login
+   * The backend validates the code and returns tokens + driver profile.
+   */
+  async loginWithCode(data: DriverCodeLoginRequest): Promise<AuthResponse> {
+    const res = await this.request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }, false);
     this.saveTokens(res.access_token, res.refresh_token);
     return res;
   }
