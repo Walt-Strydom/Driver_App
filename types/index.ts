@@ -14,6 +14,8 @@ export type JobFilter = 'assigned' | 'active' | 'completed' | 'all';
 // Driver Types
 export interface Driver {
   id: string;
+  /** Unique access code issued by dispatch, e.g. DRV-2024-ABCD */
+  driverCode?: string;
   name: string;
   phone: string;
   email?: string;

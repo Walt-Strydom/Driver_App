@@ -9,7 +9,7 @@ import { Input } from '@/components/ui';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, setDriver } = useAuth();
+  const { isAuthenticated, isLoading, setDriverWithCode } = useAuth();
 
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +35,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const res = await apiClient.loginWithCode({ code: trimmed });
-      setDriver(res.driver);
+      await setDriverWithCode(res.driver, trimmed);
       router.replace('/jobs');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid access code. Please try again.');

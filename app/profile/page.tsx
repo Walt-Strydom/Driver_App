@@ -38,6 +38,12 @@ export default function ProfilePage() {
             {driver && (
               <div className="space-y-3">
                 <Divider />
+                {driver.driverCode && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm text-txt-secondary">Driver Code</span>
+                    <span className="text-sm font-mono font-semibold text-primary tracking-wide">{driver.driverCode}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center py-1">
                   <span className="text-sm text-txt-secondary">Phone</span>
                   <span className="text-sm font-medium text-txt">{driver.phone}</span>

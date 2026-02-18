@@ -3,14 +3,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
-import { clearAllData } from '@/lib/db';
+import { clearAllData, clearDriverProfile, getDriverProfile, saveDriverProfile } from '@/lib/db';
 import type { Driver } from '@/types';
 
 interface AuthContextValue {
   driver: Driver | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setDriver: (driver: Driver) => void;
+  /** Save driver profile together with the unique access code used to log in */
+  setDriverWithCode: (driver: Driver, driverCode: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -29,7 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       try {
         const me = await apiClient.getMe();
-        setDriver(me);
+        // Re-hydrate driverCode from local profile store
+        const profile = await getDriverProfile();
+        setDriver({ ...me, driverCode: profile?.driverCode });
       } catch {
         // Token invalid or expired — clear and let guard redirect to login
         await apiClient.logout();
@@ -40,15 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
+  async function setDriverWithCode(d: Driver, code: string) {
+    await saveDriverProfile(d, code);
+    setDriver({ ...d, driverCode: code });
+  }
+
   async function logout() {
     await apiClient.logout();
     await clearAllData();
+    await clearDriverProfile();
     setDriver(null);
     router.push('/login');
   }
 
   return (
-    <AuthContext.Provider value={{ driver, isAuthenticated: !!driver, isLoading, setDriver, logout }}>
+    <AuthContext.Provider value={{ driver, isAuthenticated: !!driver, isLoading, setDriverWithCode, logout }}>
       {children}
     </AuthContext.Provider>
   );

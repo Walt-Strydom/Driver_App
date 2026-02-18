@@ -5,7 +5,23 @@ import type {
   QueuedStatusUpdate,
   QueuedProofUpload,
   AppSettings,
+  Driver,
 } from '@/types';
+
+/** Persisted driver profile stored locally, includes driverCode column */
+export interface DriverProfile {
+  id: string;
+  /** Unique access code issued by dispatch (the "driver code" column) */
+  driverCode: string;
+  name: string;
+  phone: string;
+  email?: string;
+  location: string;
+  time: string;
+  tonnage: string;
+  status: 'pending' | 'active' | 'completed';
+  savedAt: string;
+}
 
 interface DriverAppDB extends DBSchema {
   jobs_cache: {
@@ -40,10 +56,15 @@ interface DriverAppDB extends DBSchema {
     key: string;
     value: any;
   };
+  /** v2: stores the authenticated driver profile, including their unique driverCode */
+  driver_profile: {
+    key: string;
+    value: DriverProfile;
+  };
 }
 
 const DB_NAME = 'driver-app-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance: IDBPDatabase<DriverAppDB> | null = null;
 
@@ -51,40 +72,31 @@ export async function initDB(): Promise<IDBPDatabase<DriverAppDB>> {
   if (dbInstance) return dbInstance;
 
   dbInstance = await openDB<DriverAppDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      // Jobs cache store
-      if (!db.objectStoreNames.contains('jobs_cache')) {
+    upgrade(db, oldVersion) {
+      // v1 stores — created on fresh install or when upgrading from scratch
+      if (oldVersion < 1) {
         const jobsStore = db.createObjectStore('jobs_cache', { keyPath: 'id' });
         jobsStore.createIndex('by-status', 'status');
-      }
 
-      // Job detail cache store
-      if (!db.objectStoreNames.contains('job_detail_cache')) {
         db.createObjectStore('job_detail_cache', { keyPath: 'id' });
-      }
 
-      // Outbox events store
-      if (!db.objectStoreNames.contains('outbox_events')) {
         const eventsStore = db.createObjectStore('outbox_events', { keyPath: 'client_event_id' });
         eventsStore.createIndex('by-job', 'jobId');
         eventsStore.createIndex('by-created', 'createdAt');
-      }
 
-      // Outbox proof store
-      if (!db.objectStoreNames.contains('outbox_proof')) {
         const proofStore = db.createObjectStore('outbox_proof', { keyPath: 'proof_id' });
         proofStore.createIndex('by-job', 'jobId');
         proofStore.createIndex('by-created', 'createdAt');
-      }
 
-      // Outbox files store
-      if (!db.objectStoreNames.contains('outbox_files')) {
         db.createObjectStore('outbox_files', { keyPath: 'id' });
+        db.createObjectStore('settings');
       }
 
-      // Settings store
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings');
+      // v2 — adds driver_profile store with driverCode column
+      if (oldVersion < 2) {
+        if (!db.objectStoreNames.contains('driver_profile')) {
+          db.createObjectStore('driver_profile', { keyPath: 'id' });
+        }
       }
     },
   });
@@ -264,6 +276,37 @@ export async function getOutboxCount(): Promise<{ events: number; proof: number 
     db.count('outbox_events'),
     db.count('outbox_proof'),
   ]);
-  
+
   return { events, proof };
+}
+
+// Driver Profile Operations (v2 — includes driverCode column)
+export async function saveDriverProfile(driver: Driver, driverCode: string): Promise<void> {
+  const db = await initDB();
+  const profile: DriverProfile = {
+    id: driver.id,
+    driverCode,
+    name: driver.name,
+    phone: driver.phone,
+    email: driver.email,
+    location: driver.location,
+    time: driver.time,
+    tonnage: driver.tonnage,
+    status: driver.status,
+    savedAt: new Date().toISOString(),
+  };
+  await db.put('driver_profile', profile);
+}
+
+export async function getDriverProfile(): Promise<DriverProfile | undefined> {
+  const db = await initDB();
+  const all = await db.getAll('driver_profile');
+  return all[0];
+}
+
+export async function clearDriverProfile(): Promise<void> {
+  const db = await initDB();
+  const tx = db.transaction('driver_profile', 'readwrite');
+  await tx.store.clear();
+  await tx.done;
 }
