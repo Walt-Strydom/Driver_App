@@ -26,6 +26,16 @@ export default function ProfilePage() {
     } catch (err) { console.error(err); }
   }
 
+  async function handleLogout() {
+    try {
+      await apiClient.logout();
+      await clearAllData();
+      router.push('/auth/login');
+    } catch (err) {
+      console.error('Logout failed', err);
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-surface pb-20">
