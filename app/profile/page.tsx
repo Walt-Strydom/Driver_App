@@ -30,7 +30,7 @@ export default function ProfilePage() {
     try {
       await apiClient.logout();
       await clearAllData();
-      router.push('/auth/login');
+      router.push('/jobs');
     } catch (err) {
       console.error('Logout failed', err);
     }
