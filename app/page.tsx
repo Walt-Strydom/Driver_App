@@ -2,13 +2,16 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    router.replace('/jobs');
-  }, [router]);
+    if (isLoading) return;
+    router.replace(isAuthenticated ? '/jobs' : '/login');
+  }, [isLoading, isAuthenticated, router]);
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-surface-sunken overflow-hidden">

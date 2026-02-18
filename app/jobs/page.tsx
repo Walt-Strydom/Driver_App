@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { JobCard } from '@/components/jobs/JobCard';
 import { EmptyState, LoadingSpinner } from '@/components/ui';
+import { ProtectedPage } from '@/components/auth/ProtectedPage';
 import { apiClient } from '@/lib/api/client';
 import { cacheJobs, getCachedJobs } from '@/lib/db';
 import type { JobFilter, JobSummary } from '@/types';
@@ -51,53 +52,55 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <Header />
+    <ProtectedPage>
+      <div className="min-h-screen bg-surface pb-20">
+        <Header />
 
-      <main className="max-w-2xl mx-auto p-4 space-y-4">
-        {compliantAssignments > 0 && (
-          <section className="rounded-lg border border-success/30 bg-success-light p-3">
-            <p className="text-sm font-semibold text-success">
-              {compliantAssignments} compliant assignment{compliantAssignments > 1 ? 's' : ''} ready.
-            </p>
-            <p className="text-xs text-txt-secondary mt-1">
-              Open each job to capture status updates, POD, and delivery notes so n8n can sync CRM and dashboard workflows.
-            </p>
-          </section>
-        )}
+        <main className="max-w-2xl mx-auto p-4 space-y-4">
+          {compliantAssignments > 0 && (
+            <section className="rounded-lg border border-success/30 bg-success-light p-3">
+              <p className="text-sm font-semibold text-success">
+                {compliantAssignments} compliant assignment{compliantAssignments > 1 ? 's' : ''} ready.
+              </p>
+              <p className="text-xs text-txt-secondary mt-1">
+                Open each job to capture status updates, POD, and delivery notes so n8n can sync CRM and dashboard workflows.
+              </p>
+            </section>
+          )}
 
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${
-                filter === f.value ? 'bg-primary text-white' : 'bg-surface-sunken text-txt-secondary'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <LoadingSpinner size="lg" label="Loading assignments..." />
-        ) : jobs.length === 0 ? (
-          <EmptyState
-            icon={<span className="text-xl">🚚</span>}
-            title="No jobs found"
-            description="New compliant assignments from workflow notifications will appear here."
-          />
-        ) : (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${
+                  filter === f.value ? 'bg-primary text-white' : 'bg-surface-sunken text-txt-secondary'
+                }`}
+              >
+                {f.label}
+              </button>
             ))}
           </div>
-        )}
-      </main>
 
-      <BottomNav />
-    </div>
+          {loading ? (
+            <LoadingSpinner size="lg" label="Loading assignments..." />
+          ) : jobs.length === 0 ? (
+            <EmptyState
+              icon={<span className="text-xl">🚚</span>}
+              title="No jobs found"
+              description="New compliant assignments from workflow notifications will appear here."
+            />
+          ) : (
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+          )}
+        </main>
+
+        <BottomNav />
+      </div>
+    </ProtectedPage>
   );
 }

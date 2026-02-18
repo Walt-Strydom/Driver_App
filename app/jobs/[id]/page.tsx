@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/Button';
 import { Card, Badge, TextArea, Modal, LoadingSpinner, Divider, EmptyState } from '@/components/ui';
+import { ProtectedPage } from '@/components/auth/ProtectedPage';
 import { apiClient } from '@/lib/api/client';
 import { getCachedJobDetail, cacheJobDetail, addEventToOutbox, addProofToOutbox, storeProofFile, updateCachedJobStatus } from '@/lib/db';
 import { getCurrentLocation, compressImage, getNextAllowedStatuses, getStatusColor, getStatusLabel, formatDateTime, generateUUID, getGoogleMapsLink, getPhoneCallLink } from '@/lib/utils';
@@ -117,6 +118,7 @@ export default function JobDetailPage() {
   const ss = getStatusColor(job.status);
 
   return (
+    <ProtectedPage>
     <div className="min-h-screen bg-surface pb-24">
       <Header />
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
@@ -188,5 +190,6 @@ export default function JobDetailPage() {
 
       <BottomNav />
     </div>
+    </ProtectedPage>
   );
 }
